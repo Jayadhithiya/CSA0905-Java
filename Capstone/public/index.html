@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library Reservation — Smart Library Occupancy & Reservations</title>
+<meta name="description" content="Live seat occupancy, room reservations, and usage analytics for your library — powered by real-time sensors.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <span class="brand-mark">§</span>
+      <div class="brand-text">
+        <h1>Library Reservation</h1>
+        <p>Live occupancy &amp; reservations</p>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-view="dashboard">01 — Occupancy</button>
+      <button class="tab" data-view="reserve">02 — Reserve</button>
+      <button class="tab" data-view="bookings">03 — My Bookings</button>
+      <button class="tab" data-view="analytics">04 — Analytics</button>
+      <button class="tab" data-view="occupied">05 — Occupied <span id="occupiedBadge" class="tab-badge"></span></button>
+    </nav>
+    <div class="masthead-controls">
+      <div class="conn-status" id="connStatus">
+        <span class="dot"></span><span id="connLabel">Connecting…</span>
+      </div>
+      <button id="themeToggle" title="Toggle dark mode">
+        <span id="themeIcon">🌙</span>
+        <span class="theme-label" id="themeLabel">Dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ VIEW 1: DASHBOARD / OCCUPANCY ============ -->
+  <section class="view active" id="view-dashboard">
+    <div class="kpi-row" id="kpiRow">
+      <!-- skeleton placeholders -->
+      <div class="skeleton skeleton-kpi"></div>
+      <div class="skeleton skeleton-kpi"></div>
+      <div class="skeleton skeleton-kpi"></div>
+      <div class="skeleton skeleton-kpi"></div>
+      <div class="skeleton skeleton-kpi"></div>
+    </div>
+
+    <div class="panel-header">
+      <div>
+        <h2>Space catalog</h2>
+        <p class="panel-sub" id="spaceCount">Loading…</p>
+      </div>
+      <div class="filters">
+        <select id="zoneFilter"><option value="">All zones</option></select>
+        <select id="typeFilter">
+          <option value="">All types</option>
+          <option value="seat">Seats</option>
+          <option value="study_room">Study rooms</option>
+        </select>
+        <select id="statusFilter">
+          <option value="">All statuses</option>
+          <option value="available">Available</option>
+          <option value="occupied">Occupied</option>
+          <option value="reserved">Reserved</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Live search + chips -->
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="spaceSearch" placeholder="Search by code, zone, type…">
+      </div>
+      <button class="chip-btn" id="chipPower" title="Has power outlet">⚡ Has Power</button>
+      <button class="chip-btn" id="chipRoom" title="Study rooms only">🚪 Rooms only</button>
+      <button class="chip-btn" id="chipAvail" title="Available only">✅ Available</button>
+    </div>
+
+    <div class="card-grid" id="spaceGrid">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 2: RESERVE ============ -->
+  <section class="view" id="view-reserve">
+    <div class="panel-header">
+      <h2>Reserve a seat or room</h2>
+    </div>
+
+    <div class="reserve-layout">
+      <form id="reserveForm" class="reserve-form">
+        <label>
+          User
+          <input type="text" id="userName" list="userSuggestions" placeholder="Enter your name…" autocomplete="off" required>
+          <datalist id="userSuggestions"></datalist>
+        </label>
+        <label>
+          Zone
+          <select id="reserveZone" required></select>
+        </label>
+        <label>
+          Space
+          <select id="reserveSpace" required></select>
+        </label>
+        <div class="date-time-grid">
+          <div class="dt-group">
+            <span class="dt-label">Start date</span>
+            <input type="date" id="reserveStartDate" required>
+          </div>
+          <div class="dt-group">
+            <span class="dt-label">Start time</span>
+            <input type="time" id="reserveStartTime" required>
+          </div>
+          <div class="dt-group">
+            <span class="dt-label">End date</span>
+            <input type="date" id="reserveEndDate" required>
+          </div>
+          <div class="dt-group">
+            <span class="dt-label">End time</span>
+            <input type="time" id="reserveEndTime" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="reserveBtn">
+          <span class="btn-label">Reserve space</span>
+          <span class="spinner"></span>
+        </button>
+        <p class="form-msg" id="reserveMsg"></p>
+      </form>
+
+      <div class="reserve-list">
+        <h3>Upcoming &amp; active reservations</h3>
+        <div id="reservationList" class="reservation-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 3: MY BOOKINGS ============ -->
+  <section class="view" id="view-bookings">
+    <div class="panel-header">
+      <h2>My Bookings</h2>
+      <p class="panel-sub">Search your reservation history</p>
+    </div>
+    <div class="bookings-layout">
+      <div class="bookings-filter-panel">
+        <h3>Find your bookings</h3>
+        <input type="text" id="bookingName" placeholder="Your name…" autocomplete="off">
+        <div class="booking-status-tabs">
+          <button class="bstab active" data-bstatus="">All</button>
+          <button class="bstab" data-bstatus="confirmed">Active</button>
+          <button class="bstab" data-bstatus="completed">Done</button>
+          <button class="bstab" data-bstatus="cancelled">Cancelled</button>
+        </div>
+        <button class="btn-outline" id="searchBookingsBtn">Search bookings</button>
+      </div>
+      <div>
+        <div id="bookingCards" class="booking-cards">
+          <p class="empty-state">Enter your name and click Search to see your reservations.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 4: ANALYTICS ============ -->
+  <section class="view" id="view-analytics">
+    <div class="panel-header">
+      <h2>Usage analytics</h2>
+      <p class="panel-sub">Updates as sensors and check-ins log activity</p>
+    </div>
+
+    <div class="analytics-toolbar">
+      <button class="days-btn" data-days="1">Today</button>
+      <button class="days-btn active" data-days="7">7 days</button>
+      <button class="days-btn" data-days="30">30 days</button>
+      <button class="export-btn" id="exportCsvBtn">⬇ Export CSV</button>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="chart-card">
+        <h3>Peak hours <span class="chart-sub">check-ins by hour of day</span></h3>
+        <canvas id="peakHoursChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Occupancy trend <span class="chart-sub">hourly check-ins</span></h3>
+        <canvas id="trendChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Usage by zone <span class="chart-sub">total check-ins</span></h3>
+        <canvas id="zoneChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Busiest spaces <span class="chart-sub">top 10</span></h3>
+        <canvas id="topSpacesChart"></canvas>
+      </div>
+      <div class="chart-card wide">
+        <h3>Activity heatmap <span class="chart-sub">check-ins by hour × day of week</span></h3>
+        <div class="heatmap-wrap">
+          <div id="heatmapGrid" class="heatmap-grid"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW 5: OCCUPIED ============ -->
+  <section class="view" id="view-occupied">
+    <div class="panel-header">
+      <div>
+        <h2>Currently Occupied</h2>
+        <p class="panel-sub" id="occupiedSubtitle">Loading…</p>
+      </div>
+      <button class="btn-outline" id="refreshOccupiedBtn" style="font-size:12px;padding:6px 14px;">↻ Refresh</button>
+    </div>
+    <div id="occupiedTable" class="occupied-table-wrap">
+      <p class="empty-state">Loading…</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- Reservation confirmation modal -->
+<div class="modal-backdrop" id="confirmModal">
+  <div class="modal">
+    <h3>Confirm Reservation</h3>
+    <div class="modal-row"><span class="mkey">User</span><span class="mval" id="mUser">—</span></div>
+    <div class="modal-row"><span class="mkey">Space</span><span class="mval" id="mSpace">—</span></div>
+    <div class="modal-row"><span class="mkey">Start</span><span class="mval" id="mStart">—</span></div>
+    <div class="modal-row"><span class="mkey">End</span><span class="mval" id="mEnd">—</span></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="modalCancel">Cancel</button>
+      <button class="btn-confirm" id="modalConfirm">✓ Confirm booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Check-in name modal -->
+<div class="modal-backdrop" id="checkinModal">
+  <div class="modal">
+    <h3>Check In</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">Enter your name to check in to <strong id="checkinSpaceCode"></strong></p>
+    <input type="text" id="checkinName" placeholder="Your name…" autocomplete="off"
+           style="width:100%;margin-bottom:16px;" list="checkinSuggestions">
+    <datalist id="checkinSuggestions"></datalist>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="checkinModalCancel">Cancel</button>
+      <button class="btn-confirm" id="checkinModalConfirm">✓ Check in</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
